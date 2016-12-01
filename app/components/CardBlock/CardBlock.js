@@ -17,19 +17,16 @@ var CardBlock = React.createClass({
     },
 
     getCard: function (addr, status, servUuid, charUuid, value) {
-        console.log(charUuid);
-        console.log(bipso.ou(charUuid))
-        var type = bipso.ou(charUuid), 
+        var type = bipso.uo(charUuid), 
             enable,
             card,
             cardProps = {};
-
-        if (!type) return;
 
         enable = (status === 'online') ? true : false;
 
         switch (type) {
             case 'temperature':
+            console.log(status);
                 cardProps.key = 'bigCard0';
                 cardProps.dataGrid = {x: 3, y: 0, w: 2, h: 2};
                 card = (<Temperature enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} />);
@@ -39,8 +36,10 @@ var CardBlock = React.createClass({
                 cardProps.dataGrid = {x: 5, y: 0, w: 1, h: 2};
                 card = (<Plug enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} onClick={this.props.onClick} />);
                 break;
+            default:
+            	return;
         }
-console.log(cardProps);
+
         return (
             <div key={cardProps.key} data-grid={cardProps.dataGrid}>
                 {card}
@@ -77,9 +76,10 @@ console.log(cardProps);
                 var servInfo = devInfo.servList[i];
                 for (var j = 0; j < servInfo.charList.length; j += 1) {
                     var charInfo = servInfo.charList[j],
-                        card = this.getCard(addr, status, servInfo.uuid, charInfo.uuid, charInfo.value);
+                        card = this.getCard(addr, devInfo.status, servInfo.uuid, charInfo.uuid, charInfo.value);
 
-                    allCards.push(card);
+                    if (card)
+                    	allCards.push(card);
                 }
             }
         }

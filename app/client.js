@@ -52,6 +52,7 @@ var App = React.createClass({
     },
 
     attChangeHdlr: function (devInfo, charInfo) {
+        console.log(charInfo);
         this.setState({
             devs: {
                 ...this.state.devs,
