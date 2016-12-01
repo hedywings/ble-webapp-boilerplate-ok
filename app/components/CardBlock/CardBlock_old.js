@@ -2,7 +2,6 @@ import React, {PropTypes} from 'react';
 import {connect} from 'react-redux';
 import GridLayout from 'react-grid-layout';
 import {WidthProvider} from 'react-grid-layout';
-import bipso from 'bipso';
 
 import {Temperature, Plug} from '../Card/Card';
 
@@ -16,31 +15,29 @@ var CardBlock = React.createClass({
         devs: PropTypes.object.isRequired
     },
 
-    getCard: function (addr, status, servUuid, charUuid, value) {
-        console.log(charUuid);
-        console.log(bipso.ou(charUuid))
-        var type = bipso.ou(charUuid), 
-            enable,
-            card,
+    getCard: function (type, permAddr, status, auxId, value) {
+        console.log(arguments);
+        var card,
+            enable = false,
             cardProps = {};
 
-        if (!type) return;
-
-        enable = (status === 'online') ? true : false;
+        if (status === 'online') {
+            enable = true;
+        }
 
         switch (type) {
-            case 'temperature':
+            case 'Temperature':
                 cardProps.key = 'bigCard0';
                 cardProps.dataGrid = {x: 3, y: 0, w: 2, h: 2};
-                card = (<Temperature enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} />);
+                card = (<Temperature enable={enable} temp={value} />);
                 break;
-            case 'pwrCtrl':
+            case 'Plug':
                 cardProps.key = 'smallCard0';
                 cardProps.dataGrid = {x: 5, y: 0, w: 1, h: 2};
-                card = (<Plug enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} onClick={this.props.onClick} />);
+                card = (<Plug enable={enable} permAddr={permAddr} auxId={auxId} onOff={value} onClick={this.props.onClick} />);
                 break;
         }
-console.log(cardProps);
+
         return (
             <div key={cardProps.key} data-grid={cardProps.dataGrid}>
                 {card}
@@ -67,27 +64,24 @@ console.log(cardProps);
     },
 
     render: function () {
-        var allCards = [],
-            rowHeight = this.getRowHeight(),
-            devs = this.props.devs;
+        var allGadRender = [],
+            rowHeight = this.getRowHeight();
 
-        for (var addr in devs) {
-            var devInfo = devs[addr];
-            for (var i = 0; i < devInfo.servList.length; i += 1) {
-                var servInfo = devInfo.servList[i];
-                for (var j = 0; j < servInfo.charList.length; j += 1) {
-                    var charInfo = servInfo.charList[j],
-                        card = this.getCard(addr, status, servInfo.uuid, charInfo.uuid, charInfo.value);
+        for (var permAddr in this.props.devs) {
+            for (var auxId in this.props.devs[permAddr].gads) {
+                var type = this.props.devs[permAddr].gads[auxId].type,
+                    status = this.props.devs[permAddr].status,
+                    value = this.props.devs[permAddr].gads[auxId].value,
+                    card = this.getCard(type, permAddr, status, auxId, value);
 
-                    allCards.push(card);
-                }
+                allGadRender.push(card);
             }
         }
 
         return (
             <div style={{margin:'1% 0%'}}>
                 <ReactGridLayout cols={9} rowHeight={rowHeight} isDraggable={false}>
-                    {allCards}
+                    {allGadRender}
                 </ReactGridLayout>
             </div>
         );

@@ -2,9 +2,7 @@ import request from 'superagent';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
-import injectTapEventPlugin from 'react-tap-event-plugin';
-
-import ioClient from './helpers/ioClient';
+import io from 'socket.io-client';
 
 import NavBar from './components/NavBar/NavBar';
 import CardBlock from './components/CardBlock/CardBlock';
@@ -12,20 +10,8 @@ import CardBlock from './components/CardBlock/CardBlock';
 var title = 'ble-shepherd',
     permitJoinTime = 60;
 
-ioClient.start('http://' + window.location.hostname + ':3030');
+var rpcClient = io('http://' + window.location.hostname + ':3030');
 
-/*********************************************/
-/* Private Functions                         */
-/*********************************************/
-function ioConnectedDelay (callback) {
-    if (ioClient._connected) {
-        callback();
-    } else {
-        setTimeout(function () {
-            ioConnectedDelay(callback);
-        }, 1000);
-    }
-}
 
 /*********************************************/
 /* App component                             */
@@ -38,86 +24,90 @@ var App = React.createClass({
         };
     },
 
+    permitJoiningHdlr: function (timeLeft) {
+        this.setState({
+            timeLeft: timeLeft
+        });
+    },
+
+    devIncomingHdlr: function (devInfo) {
+        this.setState({
+            devs: { 
+                ...this.state.devs, 
+                [devInfo.addr]: devInfo
+            }
+        });
+    },
+
+    devStatusHdlr: function (devInfo) {
+        this.setState({
+            devs: {
+                ...this.state.devs,
+                [devInfo.addr]: {
+                    ...this.state.devs[devInfo.addr],
+                    status: devInfo.status
+                }
+            }
+        });
+    },
+
+    attChangeHdlr: function (devInfo, charInfo) {
+        this.setState({
+            devs: {
+                ...this.state.devs,
+                [devInfo.addr]: devInfo
+            }
+        });
+    },
+
     componentDidMount: function () {
         var self = this;
 
-        ioConnectedDelay(function () {
-            ioClient.sendReq('getDevs', {}, function (err, data) {
-                if (err) {
-                    console.log(err);
-                } else {
-                    self.setState({
-                        devs: data
-                    });
-                } 
-            });
-        });
+        rpcClient.on('ind', function (msg) {
+            var data = msg.data;
 
-        ioClient.on('permitJoining', function (msg) {
-            // msg = { timeLeft }
-            self.setState({
-                timeLeft: msg.timeLeft
-            });
-        });
-
-        ioClient.on('devIncoming', function (msg) {
-            // msg =  { dev }
-            self.setState({
-                devs: { ...self.state.devs, [msg.dev.permAddr]: msg.dev}
-            });
-        });
-
-        ioClient.on('devStatus', function (msg) {
-            // msg = { permAddr, status }
-            self.setState({
-                devs: {
-                    ...self.state.devs,
-                    [msg.permAddr]: {
-                        ...self.state.devs[msg.permAddr],
-                        status: msg.status
-                    }
-                }
-            });
-        });
-
-        ioClient.on('attrsChange', function (msg) {
-            // msg = { permAddr, gad } 
-            self.setState({
-                devs: {
-                    ...self.state.devs,
-                    [msg.permAddr]: {
-                        ...self.state.devs[msg.permAddr],
-                        gads: {
-                            ...self.state.devs[msg.permAddr].gads,
-                            [msg.gad.auxId]: msg.gad
-                        }
-                    }
-                }
-            });
+            switch (msg.indType) {
+                case 'permitJoining':
+                    self.permitJoiningHdlr(data);
+                    break;
+                case 'devIncoming':
+                    self.devIncomingHdlr(data);
+                    break;
+                case 'devStatus':
+                    self.devStatusHdlr(data);
+                    break;
+                case 'attChange':
+                    self.attChangeHdlr(data.devInfo, data.charInfo);
+                    break;
+            }
         });
     },
 
     onPermitCallback: function () {
-        ioConnectedDelay(function () {
-            ioClient.sendReq('permitJoin', { time: permitJoinTime }, function (err, data) {
-                if (err) {
-                    console.log(err);
-                }
-            });
-        });
+        var msg = {
+            reqType: 'permitJoin',
+            args: {
+                time: permitJoinTime
+            }
+        };
+        rpcClient.emit('req', msg);
     },
 
-    onWriteCallback: function (permAddr, auxId, value) {
+    onWriteCallback: function (permAddr, sid, cid, value) {
         return function () {
-            ioConnectedDelay(function () {
-                var args = { permAddr: permAddr, auxId: auxId, value: value };
-                ioClient.sendReq('write', args, function (err, data) {
-                    if (err) {
-                        console.log(err);
-                    }
-                });
-            });
+            var args = {
+                reqType: 'permitJoin',
+                args: {
+                    permAddr: permAddr,
+                    sid: sid,
+                    cid: cid,
+                    value: value
+                }
+            };
+
+            rpcClient.emit('req', msg);
         };
+        
     },
 
     render: function () {

@@ -4,13 +4,16 @@ import TemperatureIcon from '../Icons/TemperatureIcon';
 const Temperature = React.createClass({
     propTypes: {
         enable: PropTypes.bool.isRequired,
-        temp: PropTypes.number.isRequired
+        addr: PropTypes.string.isRequired,
+        servUuid: PropTypes.string.isRequired,
+        charUuid: PropTypes.string.isRequired,
+        value: PropTypes.object.isRequired,
     },
     render: function() {
         let enable = this.props.enable;
 
         let cardBgColor = enable ? "#F5D76E" : "#BDBDBD";
-        let cardValue = enable ? Math.round(this.props.temp) : undefined;
+        let cardValue = enable ? Math.round(this.props.value.sensorValue) : undefined;
 
         return (
             <div style={{width: "100%", height: "100%", backgroundColor: cardBgColor}}>
