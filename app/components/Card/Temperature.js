@@ -4,10 +4,10 @@ import TemperatureIcon from '../Icons/TemperatureIcon';
 const Temperature = React.createClass({
     propTypes: {
         enable: PropTypes.bool.isRequired,
+        value: PropTypes.object.isRequired,
         addr: PropTypes.string.isRequired,
         servUuid: PropTypes.string.isRequired,
-        charUuid: PropTypes.string.isRequired,
-        value: PropTypes.object.isRequired,
+        charUuid: PropTypes.string.isRequired
     },
     render: function() {
         let enable = this.props.enable;

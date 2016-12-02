@@ -26,7 +26,6 @@ var CardBlock = React.createClass({
 
         switch (type) {
             case 'temperature':
-            console.log(status);
                 cardProps.key = 'bigCard0';
                 cardProps.dataGrid = {x: 3, y: 0, w: 2, h: 2};
                 card = (<Temperature enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} />);

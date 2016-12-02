@@ -1,21 +1,21 @@
 import React, { PropTypes } from 'react';
-import PlugOnIcon from '../Icons/PlugOnIcon';
-import PlugOffIcon from '../Icons/PlugOffIcon';
+import RealyOnIcon from '../Icons/RelayOnIcon';
+import RealyOffIcon from '../Icons/RelayOffIcon';
 
 const Relay = React.createClass({
     propTypes: {
         enable: PropTypes.bool.isRequired,
+        value: PropTypes.object.isRequired,
+        onClick: PropTypes.func.isRequired,
         addr: PropTypes.string.isRequired,
         servUuid: PropTypes.string.isRequired,
-        charUuid: PropTypes.string.isRequired,
-        value: PropTypes.object.isRequired,
-        onClick: PropTypes.func.isRequired
+        charUuid: PropTypes.string.isRequired
     },
     render: function () {
         let onOff = this.props.value.onOff;
         let enable = this.props.enable;
 
-        let icon = onOff ? <PlugOnIcon /> : <PlugOffIcon />;
+        let icon = onOff ? <RealyOnIcon /> : <RealyOffIcon />;
 
         let cardBgColor = enable ? "#72E599" : "#BDBDBD";
         let onClick = enable ? this.props.onClick : function () {};

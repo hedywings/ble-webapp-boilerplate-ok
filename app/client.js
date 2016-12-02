@@ -24,39 +24,38 @@ var App = React.createClass({
         };
     },
 
-    permitJoiningHdlr: function (timeLeft) {
+    permitJoiningHdlr: function (data) {
         this.setState({
-            timeLeft: timeLeft
+            timeLeft: data.timeLeft
         });
     },
 
-    devIncomingHdlr: function (devInfo) {
+    devIncomingHdlr: function (data) {
         this.setState({
             devs: { 
                 ...this.state.devs, 
-                [devInfo.addr]: devInfo
+                [data.devInfo.addr]: data.devInfo
             }
         });
     },
 
-    devStatusHdlr: function (devInfo) {
+    devStatusHdlr: function (data) {
         this.setState({
             devs: {
                 ...this.state.devs,
-                [devInfo.addr]: {
-                    ...this.state.devs[devInfo.addr],
-                    status: devInfo.status
+                [data.devInfo.addr]: {
+                    ...this.state.devs[data.devInfo.addr],
+                    status: data.status
                 }
             }
         });
     },
 
-    attChangeHdlr: function (devInfo, charInfo) {
-        console.log(charInfo);
+    attChangeHdlr: function (data) {
         this.setState({
             devs: {
                 ...this.state.devs,
-                [devInfo.addr]: devInfo
+                [data.devInfo.addr]: data.devInfo
             }
         });
     },
@@ -78,7 +77,7 @@ var App = React.createClass({
                     self.devStatusHdlr(data);
                     break;
                 case 'attChange':
-                    self.attChangeHdlr(data.devInfo, data.charInfo);
+                    self.attChangeHdlr(data);
                     break;
             }
         });
@@ -94,12 +93,12 @@ var App = React.createClass({
         rpcClient.emit('req', msg);
     },
 
-    onWriteCallback: function (permAddr, sid, cid, value) {
+    onWriteCallback: function (addr, sid, cid, value) {
         return function () {
             var args = {
                 reqType: 'permitJoin',
                 args: {
-                    permAddr: permAddr,
+                    addr: addr,
                     sid: sid,
                     cid: cid,
                     value: value
@@ -108,7 +107,6 @@ var App = React.createClass({
 
             rpcClient.emit('req', msg);
         };
-        
     },
 
     render: function () {

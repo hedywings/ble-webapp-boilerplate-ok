@@ -8,7 +8,7 @@ var client = new ThingSpeakClient();
 
 client.attachChannel(180911, { writeKey:'R5PJ7OQOD7L2HFEN', readKey:'WHT3JMH0X9NQWZQD'});
 
-function bleApp (central) {
+function tempCtrlApp (central) {
     var blocker = central.blocker;
 
     central.support('sivannRelay', sivannRelayPlugin);
@@ -93,4 +93,4 @@ function tempChangedHdlr (data) {
     }
 }
 
-module.exports = bleApp;
+module.exports = tempCtrlApp;
