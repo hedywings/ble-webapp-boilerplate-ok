@@ -52,6 +52,19 @@ var App = React.createClass({
     },
 
     attChangeHdlr: function (data) {
+        var dev = Object.assign({}, this.state.devs[data.devInfo.addr]);
+            
+        for (var i = 0; i < dev.servList; i += 1) {
+            var servInfo = dev.servList[i];
+            if (servInfo.handle === data.charInfo.sid.handle) {
+                for(var j = 0; j < servInfo.charList; j += 1) {
+                    var charInfo = servInfo.charList[j];
+                    if (charInfo.handle === data.charInfo.cid.handle)
+                        charInfo.value = data.charInfo.cid.value;
+                }
+            }
+        }
+
         this.setState({
             devs: {
                 ...this.state.devs,
@@ -85,25 +98,26 @@ var App = React.createClass({
 
     onPermitCallback: function () {
         var msg = {
-            reqType: 'permitJoin',
-            args: {
-                time: permitJoinTime
-            }
-        };
+                reqType: 'permitJoin',
+                args: {
+                    time: permitJoinTime
+                }
+            };
+
         rpcClient.emit('req', msg);
     },
 
     onWriteCallback: function (addr, sid, cid, value) {
         return function () {
-            var args = {
-                reqType: 'permitJoin',
-                args: {
-                    addr: addr,
-                    sid: sid,
-                    cid: cid,
-                    value: value
-                }
-            };
+            var msg = {
+                    reqType: 'write',
+                    args: {
+                        addr: addr,
+                        sid: sid,
+                        cid: cid,
+                        value: value
+                    }
+                };
 
             rpcClient.emit('req', msg);
         };

@@ -4,7 +4,7 @@ import GridLayout from 'react-grid-layout';
 import {WidthProvider} from 'react-grid-layout';
 import bipso from 'bipso';
 
-import {Temperature, Plug} from '../Card/Card';
+import {Temperature, Relay} from '../Card/Card';
 
 var ReactGridLayout = WidthProvider(GridLayout);
 
@@ -33,7 +33,7 @@ var CardBlock = React.createClass({
             case 'pwrCtrl':
                 cardProps.key = 'smallCard0';
                 cardProps.dataGrid = {x: 5, y: 0, w: 1, h: 2};
-                card = (<Plug enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} onClick={this.props.onClick} />);
+                card = (<Relay enable={enable} addr={addr} servUuid={servUuid} charUuid={charUuid} value={value} onClick={this.props.onClick} />);
                 break;
             default:
             	return;

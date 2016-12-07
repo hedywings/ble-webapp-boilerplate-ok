@@ -1,2 +1,2 @@
 export Temperature from './Temperature';
-export Plug from './Plug';
+export Relay from './Relay';

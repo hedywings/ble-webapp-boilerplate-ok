@@ -58,8 +58,7 @@ function tempCtrlApp (central) {
 
                         weatherStation.read('0xbb80', '0xcc07', function (err, data) {
                             client.updateChannel(180911, { field1: data.sensorValue }, function(err, resp) {
-                                console.log(err);
-                                console.log(resp);
+
                             });
                         });
                     }, 15000);

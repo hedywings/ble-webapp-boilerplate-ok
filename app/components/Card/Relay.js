@@ -12,13 +12,13 @@ const Relay = React.createClass({
         charUuid: PropTypes.string.isRequired
     },
     render: function () {
-        let onOff = this.props.value.onOff;
         let enable = this.props.enable;
-
-        let icon = onOff ? <RealyOnIcon /> : <RealyOffIcon />;
+        let onOff = this.props.value.onOff;
 
         let cardBgColor = enable ? "#72E599" : "#BDBDBD";
         let onClick = enable ? this.props.onClick : function () {};
+
+        let icon = onOff ? <RealyOnIcon /> : <RealyOffIcon />;
 
         let copyValue = Object.assign({}, this.props.value);
         copyValue.onOff = !onOff;

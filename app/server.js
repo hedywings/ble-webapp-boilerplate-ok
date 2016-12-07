@@ -5,9 +5,9 @@ var chalk = require('chalk');
 // Machine Server
 var BleShepherd = require('ble-shepherd');
 // RPC Server 啟動函式
-var startHttpServer = require('./servers/httpServer');
+var startHttpServer = require('./httpServer');
 // HTTP Server 啟動函式
-var startRpcServer = require('./servers/rpcServer');
+var startRpcServer = require('./rpcServer');
 
 var tempCtrlApp = require('./tempCtrlApp');
 
@@ -59,12 +59,9 @@ function clientReqHdlr (msg) {
     if (msg.reqType === 'permitJoin') {
         central.permitJoin(args.time);
     } else if (msg.reqType === 'write') {
-        var dev = central.find(args.addr),
-            uuids = args.auxId.split('.'),
-            sid = uuids[0],
-            cid = uuids[1];
+        var dev = central.find(args.addr);
 
-        dev.write(sid, cid, args.value);
+        dev.write(args.sid, args.cid, args.value);
     }
 }
 
@@ -78,6 +75,7 @@ function errorEvtHdlr (err) {
 
 function permitJoiningEvtHdlr (timeLeft) {
     console.log(chalk.green('[ permitJoining ] ') + timeLeft + ' sec');
+
     rpcServer.emit('ind', { 
         indType: 'permitJoining', 
         data: {
@@ -109,6 +107,8 @@ function indEvtHdlr (msg) {
 /* Peripheral Event Handler               */
 /**********************************************/
 function devIncomingHdlr (devInfo) {
+    console.log(chalk.yellow('[   devIncoming ] ') + '@' + devInfo.addr);
+
     rpcServer.emit('ind', {
         indType: 'devIncoming',
         data: {
@@ -119,6 +119,11 @@ function devIncomingHdlr (devInfo) {
 
 function devStatusHdlr (devInfo, status) {
     if (devInfo.status === 'disc') return;
+
+    if (status === 'online')
+        status = chalk.green(status);
+    else 
+        status = chalk.red(status);
 
     rpcServer.emit('ind', {
         indType: 'devStatus',
