@@ -2,7 +2,7 @@ var http = require('http');
 var io = require('socket.io');
 
 function start () {
-	// 建立一個 HTTP Server 作為 RPC 用的 Server
+    // 建立一個 HTTP Server 作為 RPC 用的 Server
     var server = http.createServer();
 
     server.listen(3030);

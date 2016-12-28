@@ -1,9 +1,10 @@
 {
-  "name": "ble-webapp-boilerplate-ok",
+  "name": "ble-webapp-boilerplate",
   "version": "0.0.0",
   "description": "",
   "main": "main.js",
   "dependencies": {
+    "bipso": "^1.3.0",
     "ble-shepherd": "^1.0.3",
     "bshep-plugin-sivann-relay": "^0.1.0",
     "bshep-plugin-sivann-weatherstation": "^0.1.0",

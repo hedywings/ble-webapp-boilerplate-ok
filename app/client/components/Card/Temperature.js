@@ -22,11 +22,14 @@ const Temperature = React.createClass({
                 </div>
 
                 <div style={{float: "left", width: "50%", height: "100%"}}>
-                    <div style={{position: "absolute", top: "30%", bottom: "0", left: "50%", right: "0", margin: "0", textAlign: "center", fontSize: "2.2em", color: "white"}}>
+                    <div style={{position: "absolute", top: "30%", bottom: "0", 
+                                 left: "50%", right: "0", margin: "0", textAlign: "center", 
+                                 fontSize: "2.2em", color: "white"}}>
                         {cardValue} °C
                     </div>
                 </div>
             </div>
+
         );
     }
 });

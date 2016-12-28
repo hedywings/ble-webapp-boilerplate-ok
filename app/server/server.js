@@ -2,22 +2,27 @@ var path = require('path');
 var fs = require('fs');
 var chalk = require('chalk');
 
-// Machine Server
-var BleShepherd = require('ble-shepherd');
+// Machine Server 啟動函式
+var startMachineServer = require('./services/machineServer');
 // RPC Server 啟動函式
-var startHttpServer = require('./httpServer');
+var startRpcServer = require('./services/rpcServer');
 // HTTP Server 啟動函式
-var startRpcServer = require('./rpcServer');
+var startHttpServer = require('./services/httpServer');
 
-var tempCtrlApp = require('./tempCtrlApp');
+// Client Request Handler
+var clientReqHdlr = require('./handlers/clientReqHdlr');
+// BLE Machine Network Handlers
+var bleEvtHdlrs = require('./handlers/bleEvtHdlrs');
 
-var central = new BleShepherd('noble');
+// 載入溫控系統應用
+var tempCtrlApp = require('./bleapps/tempCtrlApp');
 
-var rpcServer,
+var central,
+    rpcServer,
     httpServer;
 
 function start () {
-    var dbPath = path.resolve(__dirname, '../node_modules/ble-shepherd/lib/database/ble.db');
+    var dbPath = path.resolve(__dirname, '../../node_modules/ble-shepherd/lib/database/ble.db');
     fs.exists(dbPath, function (isThere) {
         if (isThere) { fs.unlink(dbPath); }
     });
@@ -25,124 +30,35 @@ function start () {
     showWelcomeMsg();
     setLeaveMsg();
 
-    // 首先啟動機器網路
-    central.start(function (err) {
-        if (err)
-            throw err;
-
+    // 依序啟動 Machine Server, RPC Server 和 HTTP Server
+    central = startMachineServer();
+    central.on('ready', function () {
+        // 啟動溫控系統應用
         tempCtrlApp(central);
 
-        // 再來啟動 RPC Server
-        rpcServer = startRpcServer();
-        // 最後啟動 HTTP Server
-        httpServer = startHttpServer();
+        rpcServer = startRpcServer ();   // RPC Server
+        httpServer = startHttpServer (); // HTTP Server
 
         // Web Server 啟動之後，開始會有 socket 連入，監聽 'connection' 事件  
         rpcServer.on('connection', function (socket) {
-            socket.on('req', clientReqHdlr);
+            socket.on('req', function (msg) {
+                clientReqHdlr(central, rpcServer, msg);
+            });
         });
     });
 
     // 需要轉接 Machine Server 的事件至 Web Client 端
-    central.on('error', errorEvtHdlr);
-    central.on('permitJoining', permitJoiningEvtHdlr);
-    central.on('ind', indEvtHdlr);
-}
-
-
-/**********************************************/
-/* RPC Client Request Handler                 */
-/**********************************************/
-function clientReqHdlr (msg) {
-    var args = msg.args;
-
-    if (msg.reqType === 'permitJoin') {
-        central.permitJoin(args.time);
-    } else if (msg.reqType === 'write') {
-        var dev = central.find(args.addr);
-
-        dev.write(args.sid, args.cid, args.value);
-    }
-}
-
-/**********************************************/
-/* Machine Server Event Handler               */
-/**********************************************/
-function errorEvtHdlr (err) {
-    console.log(chalk.red('[         error ] ') + err.message);
-    rpcServer.emit('error', { msg: err.message });
-}
-
-function permitJoiningEvtHdlr (timeLeft) {
-    console.log(chalk.green('[ permitJoining ] ') + timeLeft + ' sec');
-
-    rpcServer.emit('ind', { 
-        indType: 'permitJoining', 
-        data: {
-            timeLeft: timeLeft
-        }
+    central.on('error', function (msg) {
+        bleEvtHdlrs.error(rpcServer, msg);
+    });
+    central.on('permitJoining', function (msg) {
+        bleEvtHdlrs.permitJoining(rpcServer, msg);
+    });
+    central.on('ind', function (msg) {
+        bleEvtHdlrs.ind(rpcServer, msg);
     });
 }
 
-function indEvtHdlr (msg) {
-    var dev = msg.periph,
-        devInfo = dev.dump();
-
-    switch (msg.type) {
-        case 'devIncoming':
-            devIncomingHdlr(devInfo);
-            break;
-
-        case 'devStatus':
-            devStatusHdlr(devInfo, msg.data);
-            break;
-
-        case 'attChange':
-            attChangeHdlr(devInfo, msg.data);
-            break;
-    }
-}
-
-/**********************************************/
-/* Peripheral Event Handler               */
-/**********************************************/
-function devIncomingHdlr (devInfo) {
-    console.log(chalk.yellow('[   devIncoming ] ') + '@' + devInfo.addr);
-
-    rpcServer.emit('ind', {
-        indType: 'devIncoming',
-        data: {
-            devInfo: devInfo
-        }
-    });
-}
-
-function devStatusHdlr (devInfo, status) {
-    if (devInfo.status === 'disc') return;
-
-    if (status === 'online')
-        status = chalk.green(status);
-    else 
-        status = chalk.red(status);
-
-    rpcServer.emit('ind', {
-        indType: 'devStatus',
-        data: {
-            devInfo: devInfo,
-            status: status
-        }
-    });
-} 
-
-function attChangeHdlr (devInfo, charInfo) {
-    rpcServer.emit('ind', {
-        indType: 'attChange',
-        data: {
-            devInfo: devInfo,
-            charInfo: charInfo
-        }
-    });
-}
 
 /**********************************/
 /* welcome function               */

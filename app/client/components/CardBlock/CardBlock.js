@@ -2,8 +2,9 @@ import React, {PropTypes} from 'react';
 import {connect} from 'react-redux';
 import GridLayout from 'react-grid-layout';
 import {WidthProvider} from 'react-grid-layout';
+import bipso from 'bipso';
 
-import {Temperature, Plug} from '../Card/Card';
+import {Temperature, Relay} from '../Card/Card';
 
 var ReactGridLayout = WidthProvider(GridLayout);
 
@@ -15,28 +16,31 @@ var CardBlock = React.createClass({
         devs: PropTypes.object.isRequired
     },
 
-    getCard: function (type, permAddr, status, auxId, value) {
-        console.log(arguments);
-        var card,
-            enable = false,
+    getCard: function (addr, status, servUuid, charUuid, value) {
+        var type = bipso.uo(charUuid), 
+            enable,
+            card,
             cardProps = {};
 
-        if (status === 'online') {
-            enable = true;
-        }
+        enable = (status === 'online') ? true : false;
 
         switch (type) {
-            case 'Temperature':
+            case 'temperature':
                 cardProps.key = 'bigCard0';
                 cardProps.dataGrid = {x: 3, y: 0, w: 2, h: 2};
-                card = (<Temperature enable={enable} temp={value} />);
+                card = (<Temperature enable={enable} addr={addr} servUuid={servUuid} 
+                         charUuid={charUuid} value={value} />);
                 break;
-            case 'Plug':
+            case 'pwrCtrl':
                 cardProps.key = 'smallCard0';
                 cardProps.dataGrid = {x: 5, y: 0, w: 1, h: 2};
-                card = (<Plug enable={enable} permAddr={permAddr} auxId={auxId} onOff={value} onClick={this.props.onClick} />);
+                card = (<Relay enable={enable} addr={addr} servUuid={servUuid} 
+                         charUuid={charUuid} value={value} onClick={this.props.onClick} />);
                 break;
+            default:
+                return;
         }
+
 
         return (
             <div key={cardProps.key} data-grid={cardProps.dataGrid}>
@@ -64,24 +68,28 @@ var CardBlock = React.createClass({
     },
 
     render: function () {
-        var allGadRender = [],
-            rowHeight = this.getRowHeight();
+        var self = this,
+            allCards = [],
+            rowHeight = this.getRowHeight(),
+            devs = this.props.devs;
 
-        for (var permAddr in this.props.devs) {
-            for (var auxId in this.props.devs[permAddr].gads) {
-                var type = this.props.devs[permAddr].gads[auxId].type,
-                    status = this.props.devs[permAddr].status,
-                    value = this.props.devs[permAddr].gads[auxId].value,
-                    card = this.getCard(type, permAddr, status, auxId, value);
+        // 遍歷 device 中的所有 Characteristic，產生 Cards
+        for (var addr in devs) {
+            var devInfo = devs[addr];
+            devInfo.servList.forEach(function (servInfo) {
+                servInfo.charList.forEach(function (charInfo) {
+                    var card = self.getCard(addr, devInfo.status, servInfo.uuid, 
+                                charInfo.uuid, charInfo.value);
 
-                allGadRender.push(card);
-            }
-        }
+                    if (card) allCards.push(card);
+                });
+            });    
+        }        
 
         return (
             <div style={{margin:'1% 0%'}}>
                 <ReactGridLayout cols={9} rowHeight={rowHeight} isDraggable={false}>
-                    {allGadRender}
+                    {allCards}
                 </ReactGridLayout>
             </div>
         );
